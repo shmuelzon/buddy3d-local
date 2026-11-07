@@ -1,0 +1,61 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types: [ created ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build SD card image
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # For git describe (archive version)
+      - name: Names and cache keys
+        id: names
+        run: |
+          for name in DIST_NAME SDK_CACHE_KEY DROPBEAR_CACHE_KEY SPLEEN_CACHE_KEY; do
+            echo "$name=$(make -s print-$name)" | tee -a "$GITHUB_OUTPUT"
+          done
+      # Each cache holds an external dependency and is keyed on its pinned
+      # version, so it only changes when that dependency is bumped.
+      - name: Cache Luckfox Pico SDK subset (toolchain, Rockit, rkaiq, librtsp)
+        uses: actions/cache@v6
+        with:
+          path: deps/luckfox-pico
+          key: ${{ steps.names.outputs.SDK_CACHE_KEY }}
+      - name: Cache dropbear sources
+        uses: actions/cache@v6
+        with:
+          path: deps/dropbear-*.tar.bz2
+          key: ${{ steps.names.outputs.DROPBEAR_CACHE_KEY }}
+      - name: Cache Spleen font
+        uses: actions/cache@v6
+        with:
+          path: deps/spleen-*.tar.gz
+          key: ${{ steps.names.outputs.SPLEEN_CACHE_KEY }}
+      - name: Build
+        run: make dist
+      - name: Upload SD card archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.names.outputs.DIST_NAME }}
+          path: out/dist/${{ steps.names.outputs.DIST_NAME }}/
+      - name: Upload Release
+        if: github.event_name == 'release' && github.event.action == 'created'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${GITHUB_REF#refs/tags/} \
+            out/dist/${{ steps.names.outputs.DIST_NAME }}.zip \
+            out/dist/${{ steps.names.outputs.DIST_NAME }}.tar.gz

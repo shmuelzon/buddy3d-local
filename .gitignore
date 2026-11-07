@@ -1,0 +1,11 @@
+/deps/
+/build/
+/out/
+# your personal config (Wi-Fi password etc.) if you keep one in sdcard/
+/sdcard/camera.conf
+/sdcard/authorized_keys
+
+# editor swap files
+*.swp
+.*.swp
+*~

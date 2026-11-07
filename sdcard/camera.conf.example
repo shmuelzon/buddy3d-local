@@ -1,0 +1,213 @@
+# buddy3d-local camera configuration
+#
+# Copy this file to `camera.conf` (sdcard/camera.conf in the project, or the
+# root of the SD card) and edit it. `camera.conf` is git-ignored because it
+# holds your Wi-Fi password.
+#
+# Format: shell-style KEY=VALUE, one per line. Quote values that contain spaces
+# or special characters. Lines starting with # are comments. Windows line
+# endings are fine. Any key left out (or commented out) takes the default shown.
+#
+# Each option is documented as:   default: X   values: ...
+
+# =============================================================== network =====
+
+# Network name for DHCP and the shell prompt.
+#   default: buddy3d
+hostname="buddy3d"
+
+# Wi-Fi network (2.4 GHz only; the RTL8188FU has no 5 GHz).
+#   default: (none, required)
+wifi_ssid="MyNetwork"
+
+# Wi-Fi password: the passphrase (8..63 characters) or the 64-hex-character
+# raw PSK (as printed by `wpa_passphrase`).
+#   default: (none, required)
+wifi_psk="changeme"
+
+# How to get an IP address.
+#   default: dhcp   values: dhcp | static
+ip_mode="dhcp"
+# Used only when ip_mode=static.
+#   default: (empty)          e.g. 192.168.1.50
+static_ip=""
+#   default: 255.255.255.0
+static_netmask="255.255.255.0"
+#   default: (empty, no default route)
+static_gateway=""
+#   default: (empty, keep the DHCP/stock resolver)
+static_dns=""
+
+# Drop the default route once the network is up, so nothing on the camera can
+# reach past the local subnet. NTP must then point at a local server.
+#   default: 0   values: 0 | 1
+lan_only=0
+
+# ================================================================== time =====
+
+# NTP server. Empty disables NTP (the clock then starts at whatever the RTC
+# says). A local server such as your router keeps the camera off the internet.
+#   default: pool.ntp.org
+ntp_server="pool.ntp.org"
+
+# POSIX TZ string, used for logs and the on-screen timestamp.
+#   default: UTC0
+#   examples: UTC0
+#             CET-1CEST,M3.5.0,M10.5.0/3            (central Europe)
+#             EST5EDT,M3.2.0,M11.1.0                (US eastern)
+#             IST-2IDT,M3.4.5/2,M10.5.0             (Israel, see note)
+# Note: this camera's C library rejects hours > 24 in the rule, so the usual
+# Israel string (".../26,...") silently falls back to UTC. The form above is
+# correct except in 2030, 2041 and 2047, when DST would start a week early.
+timezone="UTC0"
+
+# ========================================================== remote shell =====
+
+# Telnet: an UNAUTHENTICATED root shell for anyone on your network.
+# Use it for bring-up only.
+#   default: 0   values: 0 | 1
+telnet_enabled=0
+
+# SSH (dropbear, public-key authentication only). Put your public key(s), one
+# per line, in buddy3d/authorized_keys on the SD card.
+#   default: 1   values: 0 | 1
+ssh_enabled=1
+#   default: 22
+ssh_port=22
+
+# ================================================================= video =====
+
+# Codec.
+#   default: h264   values: h264 | h265
+video_codec="h264"
+# Resolution. The sensor is 1920x1080; smaller sizes are scaled by the ISP.
+#   default: 1920 x 1080
+video_width=1920
+video_height=1080
+# Frame rate to encode. 0 = whatever the sensor delivers (30 fps on this
+# camera, read from the driver at startup). A lower value makes the encoder
+# drop frames evenly (e.g. 15 = every other frame), which gives each frame a
+# bigger share of the bitrate. Auto exposure may still slow the sensor below
+# 30 fps in low light.
+#   default: 0   values: 0 | 1..sensor rate
+video_fps=0
+# Target bitrate in kbps.
+#   default: 2048
+video_bitrate=2048
+# Rate control.
+#   default: cbr   values: cbr | vbr
+video_rc="cbr"
+# I-frame interval in frames; 0 means 2 x video_fps.
+#   default: 0
+video_gop=0
+# Image orientation.
+#   default: 0   values: 0 (none) | 1 (mirror) | 2 (flip) | 3 (rotate 180)
+video_flip=0
+# Directory with the sensor's ISP tuning files (on the camera's rootfs).
+#   default: /etc/iqfiles
+iq_dir="/etc/iqfiles"
+
+# The stream is served at rtsp://<camera>:<rtsp_port><rtsp_path>
+#   default: 554
+rtsp_port=554
+#   default: /live
+rtsp_path="/live"
+
+# ===================================================== on-screen display =====
+
+# Fixed text burned into the video, e.g. where the camera is. Printable ASCII.
+# Empty = none.
+#   default: (empty)
+osd_text=""
+#   default: tl   values: tl | tr | bl | br  (top/bottom, left/right)
+osd_text_position="tl"
+
+# Timestamp, as a strftime() format, in local time (see `timezone`).
+# Empty = none.   e.g. "%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M", "%a %H:%M:%S"
+#   default: (empty)
+osd_time=""
+#   default: tr   values: tl | tr | bl | br
+osd_time_position="tr"
+# When text and time share a position they are stacked: text first, then time.
+
+# Character height in pixels.
+#   default: 32   values: 16 | 32 | 64
+osd_font_size=32
+
+# ============================================================ night mode =====
+
+# Day/night switching. Night = IR LEDs on + black-and-white image.
+#   default: auto   values: auto | day | night
+ir_mode="auto"
+# IR LED brightness in percent.
+#   default: 80   values: 0..100
+ir_brightness=80
+# Light sensor thresholds (higher reading = darker). Typical readings:
+# ~390 flashlight, ~950 lit room, ~1020 dark (the sensor saturates there).
+# Switch to night at or above:
+#   default: 1005
+ir_night_threshold=1005
+# Switch back to day at or below:
+#   default: 985
+ir_day_threshold=985
+# Seconds a new light level must persist before switching.
+#   default: 3
+ir_switch_delay=3
+# Light sensor sampling interval in milliseconds (readings are lightly
+# smoothed over ~4 samples).
+#   default: 250   values: >= 50
+ir_sample_ms=250
+# Switch the image to black-and-white at night (the sensor's "gray" tuning).
+#   default: 1   values: 0 | 1
+ir_gray=1
+# Move the IR-cut filter: in front of the sensor by day (true colours), out
+# of the way at night (so the IR LEDs light the scene).
+#   default: 1   values: 0 | 1
+ir_cut=1
+# Length of the pulse that flips the (bistable) IR-cut coil, in ms.
+#   default: 200
+ir_cut_pulse_ms=200
+
+# Green status LED.
+#   status: blink while Wi-Fi is down / no IP, solid once connected
+#   on / off: always
+# The LED is also off whenever camd is not running.
+#   default: status   values: status | on | off
+led_mode="status"
+
+# ================================================================= audio =====
+
+# Speaker input: accepts raw PCM (s16le 16 kHz mono), WAV files, or HTTP
+# POST/PUT on this TCP port. A new connection pre-empts the one playing.
+# See README for examples.
+#   default: 1   values: 0 | 1
+speaker_enabled=1
+#   default: 7777
+speaker_port=7777
+#   default: 80   values: 0..100
+speaker_volume=80
+
+# Microphone as a G.711 A-law 8 kHz audio track in the RTSP stream.
+# The Buddy3D has NO microphone fitted (the codec inputs are unconnected), so
+# leave this off; it exists for hardware that does have one.
+#   default: 0   values: 0 | 1
+mic_enabled=0
+#   default: 80   values: 0..100
+mic_volume=80
+# Software gain in dB applied before encoding.
+#   default: 12
+mic_gain_db=12
+# Which slot of the codec's stereo frame carries the mic.
+#   default: 0   values: 0 (left) | 1 (right)
+mic_channel=0
+
+# Raw audio codec mixer controls, "Name=Value;Name=Value". List the controls
+# and their current values with `camd -A` on the camera.
+#   default: (empty)
+audio_mixer=""
+
+# ================================================================= debug =====
+
+# Trace every boot-script command into buddy3d/logs/boot.log.
+#   default: 0   values: 0 | 1
+debug=0
