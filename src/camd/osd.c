@@ -28,7 +28,7 @@ struct slot {
 	int x, y, w, h;
 	int has_time;
 	uint8_t *buf;
-	int attached;
+	int attached, attached_jpeg;
 };
 
 static struct slot slots[2];
@@ -145,6 +145,14 @@ static int create(struct slot *s, int pixfmt)
 		return ret;
 	}
 	s->attached = 1;
+	if (cfg.http_port > 0) {
+		/* burn the same overlay into JPEG stills */
+		MPP_CHN_S jchn = { RK_ID_VENC, 0, STILL_VENC_CHN };
+		if (RK_MPI_RGN_AttachToChn(s->handle, &jchn, &ca))
+			ERR("osd: cannot attach region %d to the JPEG channel", s->handle);
+		else
+			s->attached_jpeg = 1;
+	}
 	return 0;
 }
 
@@ -260,6 +268,10 @@ void osd_stop(void)
 		pthread_join(thread, NULL);
 	running = 0;
 	for (int i = 0; i < nslots; i++) {
+		if (slots[i].attached_jpeg) {
+			MPP_CHN_S jchn = { RK_ID_VENC, 0, STILL_VENC_CHN };
+			RK_MPI_RGN_DetachFromChn(slots[i].handle, &jchn);
+		}
 		if (slots[i].attached) {
 			RK_MPI_RGN_DetachFromChn(slots[i].handle, &chn);
 			RK_MPI_RGN_Destroy(slots[i].handle);

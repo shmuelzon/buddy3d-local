@@ -23,6 +23,10 @@ struct config {
 	int  video_flip;         /* 0 none, 1 mirror, 2 flip, 3 both (rotate 180) */
 	char iq_dir[128];
 
+	/* JPEG stills over HTTP */
+	int  http_port;          /* 0 = disabled */
+	int  still_quality;      /* JPEG quality 1..99 */
+
 	/* rtsp */
 	int  rtsp_port;
 	char rtsp_path[64];
@@ -82,6 +86,11 @@ void video_stop(void);
 int  nightmode_start(void);
 void nightmode_stop(void);
 void video_set_gray(int gray);
+
+/* still.c */
+#define STILL_VENC_CHN 1
+int  still_start(void);
+void still_stop(void);
 
 /* osd.c */
 int  osd_start(void);

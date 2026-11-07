@@ -8,6 +8,7 @@ and the camera is exactly as it was.
 What you get:
 
 - **RTSP** video, H.264 or H.265: `rtsp://<camera>/live`
+- **JPEG stills** over HTTP: `http://<camera>/still`
 - **Speaker** input over TCP/HTTP (talk-back / announcements). The camera has
   **no microphone**, so audio is one-way.
 - **Night mode**: IR-cut filter, IR LEDs and black-and-white image, switched by the light sensor
@@ -96,6 +97,17 @@ Settings: `video_codec` (`h264`/`h265`), `video_width`/`video_height`,
 startup); `video_fps=0` encodes everything it delivers, a lower value makes
 the encoder drop frames evenly. Auto exposure may slow the sensor in low light.
 
+### JPEG stills
+
+```sh
+curl -o still.jpg http://buddy3d/still
+```
+
+Each request takes the current frame and encodes it with the hardware JPEG
+encoder (~100 ms on the camera, no CPU cost, no dropped video frames). The
+on-screen text/timestamp is included. Settings: `http_port` (default 80, 0
+disables) and `still_quality` (1..99, default 80). A 1080p still is ~230 KB.
+
 ### Night mode
 
 `ir_mode=auto|day|night`. Night moves the IR-cut filter out of the way
@@ -165,6 +177,9 @@ go2rtc:
 
 For one-off announcements (TTS, doorbell chimes), a `shell_command` that pipes
 `ffmpeg` into `nc buddy3d 7777` (or `curl --data-binary`) is enough.
+
+For a Home Assistant generic camera use `rtsp://buddy3d/live` as the stream
+source and `http://buddy3d/still` as the still image URL.
 
 Scrypted: add it as an RTSP camera with `rtsp://buddy3d/live`.
 

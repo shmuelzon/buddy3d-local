@@ -107,6 +107,14 @@ video_flip=0
 #   default: /etc/iqfiles
 iq_dir="/etc/iqfiles"
 
+# JPEG stills (hardware encoded, on request) at http://<camera>:<http_port>/still
+# 0 disables the HTTP server.
+#   default: 80
+http_port=80
+# JPEG quality.
+#   default: 80   values: 1..99
+still_quality=80
+
 # The stream is served at rtsp://<camera>:<rtsp_port><rtsp_path>
 #   default: 554
 rtsp_port=554
