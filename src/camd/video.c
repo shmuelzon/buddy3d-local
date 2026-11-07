@@ -168,7 +168,8 @@ static int vi_start(void)
 	chn.stSize.u32Height = cfg.video_height;
 	chn.enPixelFormat = RK_FMT_YUV420SP;
 	chn.enCompressMode = COMPRESS_MODE_NONE;
-	chn.u32Depth = 0;
+	/* depth 1 lets still.c take a frame while VI is bound to the encoder */
+	chn.u32Depth = cfg.http_port > 0 ? 1 : 0;
 	if ((ret = RK_MPI_VI_SetChnAttr(VI_PIPE, VI_CHN, &chn)) ||
 	    (ret = RK_MPI_VI_EnableChn(VI_PIPE, VI_CHN))) {
 		ERR("vi: channel setup 0x%x", ret);
@@ -224,7 +225,10 @@ static int venc_start(void)
 	a.stVencAttr.u32VirWidth = cfg.video_width;
 	a.stVencAttr.u32VirHeight = cfg.video_height;
 	a.stVencAttr.u32StreamBufCnt = 2;
-	a.stVencAttr.u32BufSize = cfg.video_width * cfg.video_height * 3 / 2;
+	/* Output ring for encoded frames. A raw frame's worth (w*h*3/2) wastes
+	 * CMA: encoded frames are ~100-400 KB and are taken out immediately.
+	 * w*h*3/4 is the driver's minimum and still holds several keyframes. */
+	a.stVencAttr.u32BufSize = cfg.video_width * cfg.video_height * 3 / 4;
 	a.stVencAttr.enMirror = MIRROR_NONE;
 
 	if ((ret = RK_MPI_VENC_CreateChn(VENC_CHN, &a))) {

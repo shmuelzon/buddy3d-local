@@ -26,6 +26,8 @@ struct config cfg = {
 	.video_rc = "cbr",
 	.video_flip = 0,
 	.iq_dir = "/etc/iqfiles",
+	.http_port = 80,
+	.still_quality = 80,
 	.rtsp_port = 554,
 	.rtsp_path = "/live",
 	.mic_enabled = 0, /* the Buddy3D has no microphone fitted */
@@ -76,6 +78,7 @@ uint64_t now_us(void)
 static const struct { const char *key; char type; void *ptr; size_t size; } keys[] = {
 	STR(video_codec), INT(video_width), INT(video_height), INT(video_fps),
 	INT(video_bitrate), INT(video_gop), STR(video_rc), INT(video_flip), STR(iq_dir),
+	INT(http_port), INT(still_quality),
 	INT(rtsp_port), STR(rtsp_path),
 	INT(mic_enabled), INT(mic_volume), INT(mic_channel), INT(mic_gain_db),
 	STR(ir_mode), INT(ir_brightness), INT(ir_night_threshold), INT(ir_day_threshold),
@@ -256,6 +259,8 @@ int main(int argc, char **argv)
 		goto out;
 	if (video_start())
 		goto out;
+	if (cfg.http_port > 0 && still_start())
+		ERR("stills disabled (init failed)");
 	osd_start();
 	if (cfg.mic_enabled && mic_start())
 		ERR("mic disabled (init failed)");
@@ -275,6 +280,7 @@ out:
 	speaker_stop();
 	mic_stop();
 	osd_stop();
+	still_stop();
 	video_stop();
 	rtsp_stop();
 	RK_MPI_SYS_Exit();
